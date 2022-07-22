@@ -18,6 +18,12 @@ export class RideSettingComponent implements OnInit, AfterViewInit {
     }
   ]
 
+  draggable = {
+    data: this.locationFields,
+    effectAllowed: "all",
+    handle: false
+  }
+
 
   map!: google.maps.Map;
 
@@ -84,5 +90,9 @@ export class RideSettingComponent implements OnInit, AfterViewInit {
     const newStop = { name: 'stopLocation', value: '' }
     this.locationFields.push(newStop);
 
+  }
+
+  listOrderChanged($event: any) {
+    console.log($event);
   }
 }

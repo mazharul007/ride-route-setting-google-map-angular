@@ -1,0 +1,16 @@
+<div #mapContainer id="map" class="mb-3"></div>
+
+<div>
+
+  <ul class="list-unstyled mb-3">
+    <li class="mb-3 d-flex" *ngFor="let locationField of locationFields; let i = index; let last = last; let first = first;">
+      <input type="text" placeholder="{{locationField.name}}" [(ngModel)]="locationField.value" ngx-google-places-autocomplete
+        (onAddressChange)="addressChanged($event, i)">
+      <button class="me-2" *ngIf="!last && !first" (click)="removeStop(i);">Remove Stop</button>
+      <button class="me-2" *ngIf="last" (click)="addStop();">Add Stop</button>
+    </li>
+  </ul>
+
+
+
+</div>

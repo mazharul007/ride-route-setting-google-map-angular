@@ -27,7 +27,6 @@
               "src/assets"
             ],
             "styles": [
-              "node_modules/ng-drag-drop/style.css",
               "src/styles.css"
             ],
             "scripts": []

@@ -18,11 +18,11 @@ export class RideSettingComponent implements OnInit, AfterViewInit {
     }
   ]
 
-  draggable = {
-    data: this.locationFields,
-    effectAllowed: "all",
-    handle: false
-  }
+  // draggable = {
+  //   data: this.locationFields,
+  //   effectAllowed: "all",
+  //   handle: false
+  // }
 
 
   map!: google.maps.Map;

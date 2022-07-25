@@ -5,7 +5,7 @@ import { GooglePlaceModule } from 'ngx-google-places-autocomplete';
 
 import { AppComponent } from './app.component';
 import { RideSettingComponent } from './components/ride-setting/ride-setting.component';
-import { DndModule } from 'ngx-drag-drop';
+import { NgDragDropModule } from 'ng-drag-drop';
 
 @NgModule({
   declarations: [
@@ -16,7 +16,7 @@ import { DndModule } from 'ngx-drag-drop';
     BrowserModule,
     FormsModule,
     GooglePlaceModule,
-    DndModule
+    NgDragDropModule.forRoot()
   ],
   providers: [],
   bootstrap: [AppComponent]

@@ -13,17 +13,18 @@ export class RideSettingComponent implements OnInit, AfterViewInit {
 
   waypts: google.maps.DirectionsWaypoint[] = [];
 
-  locationFields: any[] = [
-    { name: 'pickup', value: '' },
+  locationFields: Array<{ name: string, value: any, address: any }> = [
+    { name: 'pickup', value: '', address: '' },
     {
-      name: 'dropoff', value: ''
+      name: 'dropoff', value: '', address: ''
     }
   ]
-
   pickAddLat: any;
   pickAddLng: any;
   dropAddLat: any;
   dropAddLng: any;
+
+  stopCoordinates: any[] = [];
 
 
   options: Options = {
@@ -73,6 +74,12 @@ export class RideSettingComponent implements OnInit, AfterViewInit {
       }
     }
 
+
+
+  }
+
+  lastLocation = (): number => {
+    return this.locationFields.length - 1;
   }
 
   ngAfterViewInit(): void {
@@ -107,17 +114,22 @@ export class RideSettingComponent implements OnInit, AfterViewInit {
     if (i == 0) {
       this.markers.unshift(newMarker);
     }
-    if (i == (this.locationFields.length - 1)) {
+    else if (i > 0 && i < this.lastLocation()) {
+      // this.markers[i]
+      this.markers.splice(this.lastLocation() - 1, 0, newMarker);
+    }
+    else if (i == this.lastLocation()) {
       this.markers.push(newMarker);
     }
 
+    console.log(this.markers);
     // centerise map to marker
     this.map.panTo(coordinates);
 
   }
 
   addressChanged(address: any, i: number) {
-    console.log(address, i);
+    this.locationFields[i].address = address;
     if (i == 0) {
       const oldPickAddLat = this.pickAddLat;
       this.pickAddLat = address.geometry.location.lat();
@@ -133,10 +145,55 @@ export class RideSettingComponent implements OnInit, AfterViewInit {
       else {
         this.initMarkers();
       }
-
-      this.calculateAndDisplayRoute(this.directionsService, this.directionsDisplay);
+      console.log(this.locationFields);
     }
-    if (i == (this.locationFields.length - 1)) {
+    else if (i > 0 && i < this.lastLocation()) {
+      const stopAddLat = address.geometry.location.lat();
+      const stopAddLng = address.geometry.location.lng();
+
+      this.coordinates = new google.maps.LatLng(stopAddLat, stopAddLng);
+
+      // debugger;
+      let oldStopAddLat;
+      if (this.stopCoordinates.length) {
+        oldStopAddLat = this.stopCoordinates[i - 1];
+        if (oldStopAddLat) {
+          this.stopCoordinates.splice(i - 1, 1, { stopAddLat, stopAddLng });
+          this.markers[i].setMap(null);
+          this.markers.splice(i, 1);
+          // this.setmarker(this.coordinates, i);
+          const newMarker = new google.maps.Marker({
+            position: this.coordinates
+          });
+          this.markers.splice(i, 0, newMarker);
+          this.map.panTo(this.coordinates);
+          this.initMarkers();
+          this.waypts.splice(i - 1, 1, {
+            location: this.coordinates,
+            stopover: true,
+          });
+        }
+        else {
+          this.stopCoordinates.push({ stopAddLat, stopAddLng });
+          this.setmarker(this.coordinates, i);
+          this.initMarkers();
+          this.waypts.push({
+            location: this.coordinates,
+            stopover: true,
+          });
+        }
+      }
+      else {
+        this.stopCoordinates.push({ stopAddLat, stopAddLng });
+        this.setmarker(this.coordinates, i);
+        this.initMarkers();
+        this.waypts.push({
+          location: this.coordinates,
+          stopover: true,
+        });
+      }
+    }
+    else if (i == this.lastLocation()) {
       const oldDropAddLat = this.dropAddLat;
       this.dropAddLat = address.geometry.location.lat();
       this.dropAddLng = address.geometry.location.lng();
@@ -144,7 +201,6 @@ export class RideSettingComponent implements OnInit, AfterViewInit {
       this.setmarker(this.coordinates, i);
       if (oldDropAddLat) {
         if (this.pickAddLat) {
-          console.log(this.markers);
           this.markers[this.markers.length - 2].setMap(null);
           this.markers.splice((this.markers.length - 2), 1);
           console.log(this.markers);
@@ -159,8 +215,8 @@ export class RideSettingComponent implements OnInit, AfterViewInit {
         this.initMarkers();
       }
 
-      this.calculateAndDisplayRoute(this.directionsService, this.directionsDisplay);
     }
+    this.calculateAndDisplayRoute(this.directionsService, this.directionsDisplay);
   }
 
   calculateAndDisplayRoute(directionService: any, directionsDisplay: any): void {
@@ -210,8 +266,8 @@ export class RideSettingComponent implements OnInit, AfterViewInit {
   }
 
   addStop() {
-    const newStop = { name: 'stopLocation', value: '' };
-    const toIndex = this.locationFields.length - 1;
+    const newStop = { name: 'stopLocation', value: '', address: '' };
+    const toIndex = this.lastLocation();
     this.locationFields.splice(toIndex, 0, newStop);
 
   }

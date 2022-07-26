@@ -57,13 +57,14 @@ export class RideSettingComponent implements OnInit, AfterViewInit {
     }
   };
   markers: google.maps.Marker[] = [];
-
+  labels = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  labelIndex = 0;
   marker = new google.maps.Marker({
     position: this.coordinates,
     map: this.map,
   });
 
-
+  infoWindow = new google.maps.InfoWindow();
 
   constructor() {
     this.options = {
@@ -84,7 +85,6 @@ export class RideSettingComponent implements OnInit, AfterViewInit {
 
   ngAfterViewInit(): void {
     this.mapInitializer();
-
   }
 
   ngOnInit(): void {
@@ -97,26 +97,47 @@ export class RideSettingComponent implements OnInit, AfterViewInit {
     }
     this.map = new google.maps.Map(this.gmap.nativeElement, this.mapOptions);
     this.initMarkers();
+
   }
 
   initMarkers() {
     for (let i = 0; i < this.markers.length; i++) {
-      this.markers[i].setMap(this.map)
+      this.markers[i].setMap(this.map);
+      this.markers[i].setLabel(this.labels[i]);
+      const content = '<div><strong>' + this.locationFields[i].address.formatted_address + '</strong><br>'
+      this.infoWindow.setContent(content);
+      // this.infoWindow.setContent('<div><strong>' + this.locationFields[i].address.formatted_address + '</strong><br>');
+      const infoWindow = new google.maps.InfoWindow();
+      const iMarker = this.markers[i];
       this.directionsDisplay.setMap(this.map);
+      const map = this.map;
+      google.maps.event.addListener(this.markers[i], 'click', ((map, iMarker, content, infoWindow) => {
+
+        // console.log(this.locationFields[i].address);
+        // this.infoWindow.open(this.map, this.markers[i])
+        return function () {
+          infoWindow.setContent(content);
+          infoWindow.open(map, iMarker);
+        }
+      }
+      )(map, iMarker, content, infoWindow))
     }
   }
 
   setmarker(coordinates: any, i: number) {
 
     const newMarker = new google.maps.Marker({
-      position: coordinates
+      position: coordinates,
+      label: this.labels[i]
     });
+
     if (i == 0) {
       this.markers.unshift(newMarker);
     }
     else if (i > 0 && i < this.lastLocation()) {
       // this.markers[i]
       this.markers.splice(this.lastLocation() - 1, 0, newMarker);
+      this.markers[this.lastLocation()].setLabel(this.labels[this.lastLocation()])
     }
     else if (i == this.lastLocation()) {
       this.markers.push(newMarker);
@@ -129,6 +150,7 @@ export class RideSettingComponent implements OnInit, AfterViewInit {
   }
 
   addressChanged(address: any, i: number) {
+    this.infoWindow.close();
     this.locationFields[i].address = address;
     if (i == 0) {
       const oldPickAddLat = this.pickAddLat;
@@ -136,7 +158,6 @@ export class RideSettingComponent implements OnInit, AfterViewInit {
       this.pickAddLng = address.geometry.location.lng();
       this.coordinates = new google.maps.LatLng(this.pickAddLat, this.pickAddLng);
       this.setmarker(this.coordinates, i);
-
       if (oldPickAddLat) {
         this.markers[1].setMap(null);
         this.markers.splice(1, 1);
@@ -145,7 +166,7 @@ export class RideSettingComponent implements OnInit, AfterViewInit {
       else {
         this.initMarkers();
       }
-      console.log(this.locationFields);
+
     }
     else if (i > 0 && i < this.lastLocation()) {
       const stopAddLat = address.geometry.location.lat();
@@ -216,6 +237,7 @@ export class RideSettingComponent implements OnInit, AfterViewInit {
       }
 
     }
+    this.infoWindow.open(this.map, this.markers[i]);
     this.calculateAndDisplayRoute(this.directionsService, this.directionsDisplay);
   }
 
@@ -267,6 +289,7 @@ export class RideSettingComponent implements OnInit, AfterViewInit {
     this.markers[i].setMap(null);
     this.markers.splice(i, 1);
     this.waypts.splice(i - 1, 1);
+    this.initMarkers();
     this.calculateAndDisplayRoute(this.directionsService, this.directionsDisplay);
   }
 

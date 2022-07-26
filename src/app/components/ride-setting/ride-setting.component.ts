@@ -263,6 +263,11 @@ export class RideSettingComponent implements OnInit, AfterViewInit {
 
   removeStop(i: number) {
     this.locationFields = this.locationFields.filter((x, index) => index != i);
+    this.stopCoordinates.splice(i - 1, 1);
+    this.markers[i].setMap(null);
+    this.markers.splice(i, 1);
+    this.waypts.splice(i - 1, 1);
+    this.calculateAndDisplayRoute(this.directionsService, this.directionsDisplay);
   }
 
   addStop() {

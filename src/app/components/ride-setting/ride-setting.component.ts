@@ -10,39 +10,24 @@ import { mapStyle } from './mapStyle';
 export class RideSettingComponent implements OnInit, AfterViewInit {
 
   @ViewChild('mapContainer', { static: false }) gmap!: ElementRef;
-  waypts: google.maps.DirectionsWaypoint[] = [];
+  pickAddLat: any;
+  pickAddLng: any;
+  dropAddLat: any;
+  dropAddLng: any;
+  stopCoordinates: any[] = [];
+
   locationFields: Array<{ name: string, value: any, address: any }> = [
     { name: 'pickup', value: '', address: '' },
     {
       name: 'dropoff', value: '', address: ''
     }
   ]
-  pickAddLat: any;
-  pickAddLng: any;
-  dropAddLat: any;
-  dropAddLng: any;
-
-  stopCoordinates: any[] = [];
-
-
-  options: Options = {
-    animation: 150
-  };
-
-
-  map!: google.maps.Map;
-
   lat = 23.7739397;
   lng = 90.4124768;
-
   coordinates = new google.maps.LatLng(this.lat, this.lng);
-
   directionsService = new google.maps.DirectionsService;
   directionsDisplay = new google.maps.DirectionsRenderer({ polylineOptions: { strokeColor: "#8DC53E" }, suppressMarkers: true, preserveViewport: true });
-
-
-  // public stopCoorArr: google.maps.LatLngLiteral[] = [];
-
+  map!: google.maps.Map;
   mapOptions: google.maps.MapOptions = {
     center: this.coordinates,
     zoom: 14,
@@ -55,38 +40,33 @@ export class RideSettingComponent implements OnInit, AfterViewInit {
     }
   };
   markers: any[] = [];
+  contents: any[] = [];
+  infoWindow = new google.maps.InfoWindow();
+  waypts: google.maps.DirectionsWaypoint[] = [];
   labels = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
   labelIndex = 0;
-  // marker = new google.maps.Marker({
-  //   position: this.coordinates,
-  //   map: this.map,
-  // });
 
-  infoWindow = new google.maps.InfoWindow();
-  // InforObj: google.maps.InfoWindow[] = [];
+  options: Options = {
+    animation: 150
+  };
 
   constructor() {
     this.options = {
       onUpdate: (event: any) => {
-        console.log(event);
-        console.log(this.locationFields)
-        return false;
+        this.listOrderChanged(event);
       }
     }
-
-
-
   }
 
-  lastLocation = (): number => {
-    return this.locationFields.length - 1;
+  ngOnInit(): void {
   }
 
   ngAfterViewInit(): void {
     this.mapInitializer();
   }
 
-  ngOnInit(): void {
+  lastLocation = (): number => {
+    return this.locationFields.length - 1;
   }
 
   mapInitializer() {
@@ -98,7 +78,7 @@ export class RideSettingComponent implements OnInit, AfterViewInit {
     this.initMarkers();
 
   }
-  contents: any[] = [];
+
   initMarkers() {
     for (let i = 0; i < this.markers.length; i++) {
       this.markers[i]?.setMap(this.map);
@@ -109,7 +89,6 @@ export class RideSettingComponent implements OnInit, AfterViewInit {
   }
 
   setmarker(coordinates: any, i: number) {
-
     const newMarker = new google.maps.Marker({
       position: coordinates,
       label: this.labels[i]
@@ -122,42 +101,12 @@ export class RideSettingComponent implements OnInit, AfterViewInit {
       this.markers[0] = newMarker;
       this.contents[0] = content;
     }
-    else if (i > 0 && i < this.lastLocation()) {
-      // if (this.markers.length < this.locationFields.length) {
-
-      // }
+    else if (i > 0 && i <= this.lastLocation()) {
       this.markers[i]?.setMap(null);
       this.markers[i] = newMarker;
       this.contents[i] = content;
-      // this.markers.splice(this.lastLocation() - 1, 0, newMarker);
-      // this.contents.splice(this.lastLocation() - 1, 0, content);
-      // this.markers[this.lastLocation()].setLabel(this.labels[this.lastLocation()])
-      // this.contents[this.lastLocation()] = this.contents[this.lastLocation()]
     }
-    else if (i == this.lastLocation()) {
-      // if (i != 1 && this.locationFields[i - 1].value == '') {
-      //   this.markers[i - 1].setMap(null);
-      //   this.markers[i - 1] = new google.maps.Marker({});
-      //   this.contents[i - 1] = '';
-      // }
-      // else {
-      //   this.markers[i]?.setMap(null);
-      //   this.markers[i] = newMarker;
-      //   this.contents[i] = content;
-      //   console.log(this.markers);
-      // }
-      this.markers[i]?.setMap(null);
-      this.markers[i] = newMarker;
-      this.contents[i] = content;
-      console.log(this.markers);
-      // this.markers.push(newMarker);
-      // this.contents.push(content);
-    }
-
-    // console.log(this.markers);
-    // centerise map to marker
     this.map.panTo(coordinates);
-
   }
 
   setMarkerClickEvent() {
@@ -172,13 +121,12 @@ export class RideSettingComponent implements OnInit, AfterViewInit {
     })
   }
 
-  addressChanged = async (address: any, i: number) => {
+  addressChanged = (address: any, i: number) => {
     this.infoWindow.close();
     this.locationFields[i].address = address;
     this.locationFields[i].value = this.locationFields[i].address.formatted_address;
 
     if (i == 0) {
-      // const oldPickAddLat = this.pickAddLat;
       this.pickAddLat = address.geometry.location.lat();
       this.pickAddLng = address.geometry.location.lng();
       this.coordinates = new google.maps.LatLng(this.pickAddLat, this.pickAddLng);
@@ -190,87 +138,26 @@ export class RideSettingComponent implements OnInit, AfterViewInit {
       const stopAddLat = address.geometry.location.lat();
       const stopAddLng = address.geometry.location.lng();
 
-      this.coordinates = new google.maps.LatLng(stopAddLat, stopAddLng);
       this.stopCoordinates[i - 1] = { stopAddLat, stopAddLng };
+      this.coordinates = new google.maps.LatLng(stopAddLat, stopAddLng);
       this.setmarker(this.coordinates, i);
       this.initMarkers();
       this.waypts[i - 1] = { location: this.coordinates, stopover: true, };
-      // debugger;
-      let oldStopAddLat;
-      // if (this.stopCoordinates.length) {
-      //   oldStopAddLat = this.stopCoordinates[i - 1];
-      //   if (oldStopAddLat) {
-      //     this.stopCoordinates.splice(i - 1, 1, { stopAddLat, stopAddLng });
-      //     this.markers[i].setMap(null);
-      //     this.markers.splice(i, 1);
-      //     this.contents.splice(i, 1);
-      //     // this.setmarker(this.coordinates, i);
-
-      //     const newMarker = new google.maps.Marker({
-      //       position: this.coordinates
-      //     });
-      //     this.markers.splice(i, 0, newMarker);
-      //     const content = '<div><strong>' + this.locationFields[i].address.formatted_address + '</strong><br>';
-      //     this.contents.splice(i, 0, content);
-      //     this.map.panTo(this.coordinates);
-      //     this.initMarkers();
-      //     this.waypts.splice(i - 1, 1, {
-      //       location: this.coordinates,
-      //       stopover: true,
-      //     });
-      //   }
-      //   else {
-      //     this.stopCoordinates.push({ stopAddLat, stopAddLng });
-      //     this.setmarker(this.coordinates, i);
-      //     this.initMarkers();
-
-      //     this.waypts.push({
-      //       location: this.coordinates,
-      //       stopover: true,
-      //     });
-      //   }
-      // }
-      // else {
-      //   this.stopCoordinates[i - 1] = { stopAddLat, stopAddLng };
-      //   this.setmarker(this.coordinates, i);
-      //   this.initMarkers();
-      //   this.waypts.push({
-      //     location: this.coordinates,
-      //     stopover: true,
-      //   });
-      // }
     }
     else if (i == this.lastLocation()) {
-      const oldDropAddLat = this.dropAddLat;
       this.dropAddLat = address.geometry.location.lat();
       this.dropAddLng = address.geometry.location.lng();
       this.coordinates = new google.maps.LatLng(this.dropAddLat, this.dropAddLng);
       this.setmarker(this.coordinates, i);
       this.initMarkers();
-      // if (oldDropAddLat) {
-      //   if (this.pickAddLat) {
-      //     this.markers[this.markers.length - 2].setMap(null);
-      //     this.markers.splice((this.markers.length - 2), 1);
-      //     console.log(this.markers);
-      //     this.initMarkers();
-      //   } else {
-      //     this.markers[0].setMap(null);
-      //     this.markers.shift();
-      //     this.initMarkers();
-      //   }
-      // }
-      // else {
-      //   this.initMarkers();
-      //   // await this.setMarkerClickEvent(i);
-      // }
     }
-    console.log(this.contents);
+
     this.infoWindow.setContent(this.contents[i]);
     this.infoWindow.open(this.map, this.markers[i]);
-    this.calculateAndDisplayRoute(this.directionsService, this.directionsDisplay);
+    this.calculateAndDisplayRoute(this.directionsDisplay);
   }
 
-  calculateAndDisplayRoute(directionService: any, directionsDisplay: any): void {
+  calculateAndDisplayRoute(directionsDisplay: any): void {
 
     let start, end;
 
@@ -291,7 +178,6 @@ export class RideSettingComponent implements OnInit, AfterViewInit {
       return
     }
 
-    console.log(start, end);
     this.directionsService.route({
       origin: start,
       destination: end,
@@ -331,12 +217,24 @@ export class RideSettingComponent implements OnInit, AfterViewInit {
     this.contents.splice(i, 1);
     this.waypts.splice(i - 1, 1);
     this.initMarkers();
-    this.calculateAndDisplayRoute(this.directionsService, this.directionsDisplay);
+    this.calculateAndDisplayRoute(this.directionsDisplay);
   }
 
 
 
-  listOrderChanged($event: any) {
-    console.log($event);
+  async listOrderChanged(event: any) {
+    console.log(event);
+    const oldIndex = event.oldIndex;
+    const newIndex = event.newIndex;
+
+    console.log(this.locationFields);
+
+    const oldAddress = this.locationFields[oldIndex].address; //mohakhali
+    const newAddress = this.locationFields[newIndex].address; //uttara
+
+    console.log(oldAddress, newAddress);
+    await this.addressChanged(oldAddress, oldIndex);
+    await this.addressChanged(newAddress, newIndex);
+    console.log(this.contents);
   }
 }

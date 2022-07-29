@@ -106,6 +106,8 @@ export class RideSettingComponent implements OnInit, AfterViewInit {
       this.markers[i] = newMarker;
       this.contents[i] = content;
     }
+
+    console.log(this.contents);
     this.map.panTo(coordinates);
   }
 
@@ -114,7 +116,6 @@ export class RideSettingComponent implements OnInit, AfterViewInit {
       google.maps.event.clearListeners(mark, 'click');
       mark?.addListener('click', () => {
         this.infoWindow.close();
-        console.log(this.contents[i], i);
         this.infoWindow.setContent(this.contents[i]);
         this.infoWindow.open(this.map, this.markers[i]);
       })
@@ -155,6 +156,7 @@ export class RideSettingComponent implements OnInit, AfterViewInit {
     this.infoWindow.setContent(this.contents[i]);
     this.infoWindow.open(this.map, this.markers[i]);
     this.calculateAndDisplayRoute(this.directionsDisplay);
+    console.log('changed address of ' + i);
   }
 
   calculateAndDisplayRoute(directionsDisplay: any): void {
@@ -189,6 +191,7 @@ export class RideSettingComponent implements OnInit, AfterViewInit {
       function (response, status) {
         if (status == 'OK') {
           directionsDisplay.setDirections(response);
+          console.log(response);
         }
         else {
           window.alert('Directions request failed due to ' + status);
@@ -229,12 +232,51 @@ export class RideSettingComponent implements OnInit, AfterViewInit {
 
     console.log(this.locationFields);
 
-    const oldAddress = this.locationFields[oldIndex].address; //mohakhali
-    const newAddress = this.locationFields[newIndex].address; //uttara
+    const oldAddress = this.locationFields[newIndex].address; //uttara
+    const newAddress = this.locationFields[oldIndex].address; //motijheel
+    // await this.addressChanged(newAddress, oldIndex);
+    // setTimeout(() => {
+    //   this.addressChanged(oldAddress, newIndex);
+    // }, 1600);
 
-    console.log(oldAddress, newAddress);
-    await this.addressChanged(oldAddress, oldIndex);
-    await this.addressChanged(newAddress, newIndex);
-    console.log(this.contents);
+    const differece = Math.abs(oldIndex - newIndex);
+
+    if (differece == 1) {
+      await this.changeDirection(oldIndex, newAddress);
+      await this.changeDirection(newIndex, oldAddress);
+    }
+
+    // console.log(this.contents);
+
+    this.initMarkers();
+    this.infoWindow.setContent(this.contents[newIndex]);
+    this.infoWindow.open(this.map, this.markers[newIndex]);
+    this.calculateAndDisplayRoute(this.directionsDisplay);
+    // this.calculateAndDisplayRoute(this.directionsDisplay);
+  }
+
+  changeDirection(i: number, address: any) {
+    if (i == 0) {
+      this.pickAddLat = address.geometry.location.lat();
+      this.pickAddLng = address.geometry.location.lng();
+      this.coordinates = new google.maps.LatLng(this.pickAddLat, this.pickAddLng);
+      this.setmarker(this.coordinates, i);
+      console.log(this.contents);
+    }
+    else if (i > 0 && i < this.lastLocation()) {
+      const stopAddLat = address.geometry.location.lat();
+      const stopAddLng = address.geometry.location.lng();
+      this.stopCoordinates[i - 1] = { stopAddLat, stopAddLng };
+      this.coordinates = new google.maps.LatLng(stopAddLat, stopAddLng);
+      this.setmarker(this.coordinates, i);
+      this.waypts[i - 1] = { location: this.coordinates, stopover: true, };
+    }
+    else if (i == this.lastLocation()) {
+      this.dropAddLat = address.geometry.location.lat();
+      this.dropAddLng = address.geometry.location.lng();
+      this.coordinates = new google.maps.LatLng(this.dropAddLat, this.dropAddLng);
+      this.setmarker(this.coordinates, i);
+      console.log(this.contents);
+    }
   }
 }
